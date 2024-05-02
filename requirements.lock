@@ -9,4 +9,4 @@
 
 -e file:.
 click==8.1.7
-    # via nested-json-parser
+# via rj2y

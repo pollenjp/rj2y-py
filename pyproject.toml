@@ -1,5 +1,5 @@
 [project]
-name = "nested-json-parser"
+name = "rj2y"
 version = "0.1.0"
 description = "Add your description here"
 authors = [{ name = "pollenjp", email = "polleninjp@gmail.com" }]
@@ -19,10 +19,10 @@ dev-dependencies = ["ruff>=0.4.2", "pytest>=8.2.0"]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/nested_json_parser"]
+packages = ["src/rj2y"]
 
 [project.scripts]
-nested-json-parser = "nested_json_parser.main:main"
+rj2y = "rj2y.main:main"
 
 [tool.mypy]
 python_version = "3.10"

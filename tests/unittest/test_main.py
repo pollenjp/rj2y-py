@@ -1,4 +1,4 @@
-from nested_json_parser.main import parse_embedded_json_string
+from rj2y.main import parse_embedded_json_string
 
 
 def test_yaml_node_dump() -> None:

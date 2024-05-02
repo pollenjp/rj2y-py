@@ -9,7 +9,7 @@
 
 -e file:.
 click==8.1.7
-    # via nested-json-parser
+    # via rj2y
 exceptiongroup==1.2.1
     # via pytest
 iniconfig==2.0.0
