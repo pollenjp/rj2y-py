@@ -2,64 +2,160 @@ import json
 import sys
 import textwrap
 import typing as t
-from pathlib import Path
+from abc import ABC, abstractmethod
 
 import click
 
-YamlGeneralValueType: t.TypeAlias = int | str | bool | t.Mapping[t.Any, t.Any] | t.Iterable[t.Any]
+YamlGeneralValueType: t.TypeAlias = int | str | bool | float | t.Mapping[t.Any, t.Any] | t.Iterable[t.Any]
+
+T = t.TypeVar("T", str, int, float, bool, dict[str, YamlGeneralValueType], list[YamlGeneralValueType])
 
 
-def parse_nested_json(obj: YamlGeneralValueType) -> str:
-    """文字列として埋め込まれている JSON もパースして表示する. YAML書式として出力する.
+class YamlNode(ABC):
+    indent_size = 2
 
-    Args:
-        obj (YamlGeneralValueType): _description_
+    @property
+    def tag(self) -> str | None:
+        return None
 
-    Returns:
-        str: _description_
-    """
-    prefix = "  "
-    list_start = "-"
-    list_prefix = "  "
+    @abstractmethod
+    def dump(self) -> str:
+        pass
 
-    text_list: list[str] = []
-    if isinstance(obj, str):
-        # 可読性重視のため json 文字列の場合は、json としてパースする
-        value: str | t.Any = obj
-        if obj.lstrip().startswith("{") or obj.lstrip().startswith("["):
-            # if encoded json string, parse it
-            try:  # json check
-                value = json.loads(obj)
-            except json.JSONDecodeError:
-                pass
 
-        if isinstance(value, str):
-            if len(value.split("\n")) <= 1:
-                text_list.append(value)
-            else:
-                text_list.append("!!str |")
-                text_list.append(value)
-        else:
-            text_list.append(textwrap.indent(parse_nested_json(value), prefix=prefix))
-    elif isinstance(obj, t.Mapping):
+class StrYamlNode(YamlNode):
+    def __init__(self, value: str):
+        self.value = value
+
+    @property
+    def tag(self) -> str:
+        if len(self.value.split("\n")) > 1:
+            return "!!str |-"
+        return "!!str"
+
+    def dump(self) -> str:
+        return self.value
+
+
+class IntYamlNode(YamlNode):
+    def __init__(self, value: int):
+        self.value = value
+
+    @property
+    def tag(self) -> str:
+        return "!!int"
+
+    def dump(self) -> str:
+        return str(self.value)
+
+
+class FloatYamlNode(YamlNode):
+    def __init__(self, value: float):
+        self.value = value
+
+    @property
+    def tag(self) -> str:
+        return "!!float"
+
+    def dump(self) -> str:
+        return f"{self.value}"
+
+
+class BoolYamlNode(YamlNode):
+    def __init__(self, value: bool):  # noqa: FBT001
+        self.value = value
+
+    @property
+    def tag(self) -> str:
+        return "!!bool"
+
+    def dump(self) -> str:
+        return "true" if self.value else "false"
+
+
+class MappingYamlNode(YamlNode):
+    def __init__(self, value: dict[str, YamlNode]):
+        self.value = value
+
+    @classmethod
+    def parse(cls, obj: dict[str, YamlGeneralValueType]) -> "MappingYamlNode":
+        root: dict[str, YamlNode] = {}
         for k, v in obj.items():
-            text_list.append(f"{k}:")
-            if len((txt := parse_nested_json(v)).split("\n")) <= 1:
-                text_list.append(text_list.pop() + f" {txt}")
-            else:
-                text_list.append(textwrap.indent(txt, prefix=prefix))
-    elif isinstance(obj, t.Iterable):
+            root[k] = parse_to_yaml_node(v)
+        return cls(root)
+
+    def dump(self) -> str:
+        return "\n".join(
+            [
+                "\n".join(
+                    [
+                        f"{k}:" + ("" if v.tag is None else f" {v.tag}"),
+                        textwrap.indent(v.dump(), " " * self.indent_size),
+                    ]
+                )
+                for k, v in self.value.items()
+            ]
+        )
+
+
+class ListYamlNode(YamlNode):
+    def __init__(self, value: list[YamlNode]):
+        self.value = value
+
+    @classmethod
+    def parse(cls, obj: list[YamlGeneralValueType]) -> "ListYamlNode":
+        root: list[YamlNode] = []
         for v in obj:
-            if len((txt := parse_nested_json(v)).split("\n")) <= 1:
-                text_list.append(f"{list_start} {txt}")
-            else:
-                text_list += [
-                    f"{list_start}",
-                    textwrap.indent(parse_nested_json(v), prefix=list_prefix),
-                ]
-    else:
-        text_list.append(f"{obj}")
-    return "\n".join(text_list)
+            root.append(parse_to_yaml_node(v))
+        return cls(root)
+
+    def dump(self) -> str:
+        return "\n".join(
+            [
+                "\n".join(
+                    [
+                        "-" + ("" if v.tag is None else f" {v.tag}"),
+                        textwrap.indent(v.dump(), " " * self.indent_size),
+                    ]
+                )
+                for v in self.value
+            ]
+        )
+
+
+def parse_embedded_json_string(obj: str) -> "StrYamlNode | MappingYamlNode | ListYamlNode":
+    if ((stripped_str := obj.strip()).startswith("{") and stripped_str.endswith("}")) or (
+        stripped_str.startswith("[") and stripped_str.endswith("]")
+    ):  # if encoded json string, parse it
+        decoded_json: list[t.Any] | dict[str, t.Any] | None = None
+        try:  # json check
+            decoded_json = json.loads(obj)
+        except json.JSONDecodeError:  # return raw string if json decode error
+            click.echo(f"Failed to decode JSON string: {str(obj)!r}", err=True)
+            pass
+
+        if isinstance(decoded_json, dict):
+            return MappingYamlNode.parse(decoded_json)
+        elif isinstance(decoded_json, list):
+            return ListYamlNode.parse(decoded_json)
+    return StrYamlNode(obj)
+
+
+def parse_to_yaml_node(v: YamlGeneralValueType) -> YamlNode:
+    if isinstance(v, str):
+        return parse_embedded_json_string(v)
+    if isinstance(v, bool):  # note: bool should be checked before int because bool is a subclass of int
+        return BoolYamlNode(v)
+    if isinstance(v, int):
+        return IntYamlNode(v)
+    if isinstance(v, float):
+        return FloatYamlNode(v)
+    if isinstance(v, dict):
+        return MappingYamlNode.parse(v)
+    if isinstance(v, list):
+        return ListYamlNode.parse(v)
+    er_msg = f"Invalid type: {v}"
+    raise ValueError(er_msg)
 
 
 @click.command()
@@ -70,7 +166,8 @@ def main(json_file: t.TextIO) -> None:
     with json_file as f:
         data = json.load(f)
 
-    click.echo(parse_nested_json(data))
+    parsed_data = parse_to_yaml_node(data)
+    click.echo(parsed_data.dump())
 
 
 if __name__ == "__main__":
