@@ -1,5 +1,9 @@
 # rj2y
 
+[![PyPI](https://img.shields.io/pypi/v/rj2y)](https://pypi.org/project/rj2y/)
+[![PyPI Python Versions](https://img.shields.io/pypi/pyversions/rj2y)](https://pypi.org/project/rj2y/)
+[![Downloads](https://pepy.tech/badge/rj2y)](https://pepy.tech/project/rj2y)
+
 This CLI tool is a simple utility to convert JSON to YAML. Especially useful when you want to convert JSON including embedded JSON as a string.
 
 It may be convenient to reading server logs. Using with [`jq`](https://github.com/jqlang/jq) and [`yq`](https://github.com/mikefarah/yq) is recommended.
