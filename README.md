@@ -6,6 +6,26 @@
 
 This CLI tool is a simple utility to convert JSON to YAML. Especially useful when you want to convert JSON including JSON-embedded string.
 
+```json
+{
+  "iii": "{\"i\":\"{\\\"ii\\\": \\\"ii\\\"}\",\"ii\":\"ii\"}",
+  "kkk": "{\"k\": \"{\\\"kk\\\": \\\"kk1\\\\nkk2\\\\nkk3\\\\n\\\"}\"}"
+}
+```
+
+```yaml
+iii:
+  i:
+    ii: !!str ii
+  ii: !!str ii
+kkk:
+  k:
+    kk: !!str |-
+      kk1
+      kk2
+      kk3
+```
+
 It may be convenient to reading server logs. Using with [`jq`](https://github.com/jqlang/jq) and [`yq`](https://github.com/mikefarah/yq) is recommended.
 
 ## Installation
