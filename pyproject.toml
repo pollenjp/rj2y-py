@@ -1,6 +1,6 @@
 [project]
 name = "rj2y"
-version = "0.1.4"
+version = "0.1.5"
 description = "Recursively convert JSON including json-string to YAML"
 authors = [{ name = "pollenjp", email = "polleninjp@gmail.com" }]
 dependencies = ["click>=8.1.7"]
