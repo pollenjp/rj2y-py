@@ -41,9 +41,12 @@ class StrYamlNode(YamlNode):
 
     @property
     def tag(self) -> str:
-        if len(self.value.split("\n")) > 1:
-            return "!!str |-"
-        return "!!str"
+        # if len(self.value.split("\n")) > 1:
+        #     return "!!str |-"
+        # return "!!str"
+
+        # FIXME: redundant
+        return "!!str |-"  # prevent alias node
 
     def dump(self) -> str:
         return self.value
