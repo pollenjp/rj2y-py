@@ -23,6 +23,18 @@ class YamlNode(ABC):
         pass
 
 
+class NullYamlNode(YamlNode):
+    def __init__(self, value: None):
+        self.value = value
+
+    @property
+    def tag(self) -> str:
+        return ""
+
+    def dump(self) -> str:
+        return "null"
+
+
 class StrYamlNode(YamlNode):
     def __init__(self, value: str):
         self.value = value
@@ -142,6 +154,8 @@ def parse_embedded_json_string(obj: str) -> "StrYamlNode | MappingYamlNode | Lis
 
 
 def parse_to_yaml_node(v: YamlGeneralValueType) -> YamlNode:
+    if v is None:
+        return NullYamlNode(v)
     if isinstance(v, str):
         return parse_embedded_json_string(v)
     if isinstance(v, bool):  # note: bool should be checked before int because bool is a subclass of int
