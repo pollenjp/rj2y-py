@@ -42,59 +42,59 @@ def test_yaml_node_dump() -> None:
     parsed_data = parse_embedded_json_string(sample_json)
     assert (
         parsed_data.dump()
-        == r"""aaa: !!str
+        == r"""aaa: !!str |-
   AAA
 bbb: !!bool
   true
 ccc: !!int
   123
-ccc2: !!str
+ccc2: !!str |-
   123
 ddd: !!float
   123.456
-ddd2: !!str
+ddd2: !!str |-
   123.456
 eee:
-  - !!str
+  - !!str |-
     e
-  - !!str
+  - !!str |-
     ee
-  - !!str
+  - !!str |-
     eee
 fff:
-  f: !!str
+  f: !!str |-
     f
-  ff: !!str
+  ff: !!str |-
     ff
-  fff: !!str
+  fff: !!str |-
     fff
 ggg:
   -
-    g: !!str
+    g: !!str |-
       g
-    gg: !!str
+    gg: !!str |-
       gg
-    ggg: !!str
+    ggg: !!str |-
       ggg
   -
-    g: !!str
+    g: !!str |-
       g
-    gg: !!str
+    gg: !!str |-
       gg
-    ggg: !!str
+    ggg: !!str |-
       ggg
 hhh:
-  h: !!str
+  h: !!str |-
     h
-  hh: !!str
+  hh: !!str |-
     hh
-  hhh: !!str
+  hhh: !!str |-
     hhh
 iii:
   i:
-    ii: !!str
+    ii: !!str |-
       ii
-  ii: !!str
+  ii: !!str |-
     ii
 jjj: !!str |-
   jj1
